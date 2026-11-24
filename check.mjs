@@ -34,7 +34,11 @@ if (args.includes('--self-check')) {
   expect('label "openai" valid', isValidLabel('openai'), true);
   expect('label "a-b2" valid', isValidLabel('a-b2'), true);
   expect('label 64 chars valid', isValidLabel('a'.repeat(64)), false);
-  if (fail.length === 0) console.log('check.mjs --self-check PASS (15 verdict/label mappings, offline)');
+  const refused = refusedReport('a b', ['com'], ['github', 'x']);
+  expect('refused: domain', refused.domains[0].verdict, 'could-not-confirm');
+  expect('refused: handle', refused.social[0].verdict, 'could-not-confirm');
+  expect('refused: apps', refused.apps.verdict, 'could-not-confirm');
+  if (fail.length === 0) console.log('check.mjs --self-check PASS (18 verdict/label/refusal mappings, offline)');
   else { console.log('check.mjs --self-check FAIL: ' + fail.join('; ')); process.exit(1); }
   process.exit(0);
 }
@@ -139,8 +143,26 @@ async function checkApps(name) {
   }
 }
 
+// Every row for an unusable name refuses in the same words. Pure, so --self-check can assert it
+// offline: three checks disagreeing about one subject was the bug this replaces.
+export function refusedReport(name, tlds, handles) {
+  return {
+    name,
+    domains: tlds.map((tld) => ({ fqdn: `${name}.${tld}`, verdict: 'could-not-confirm', basis: 'not a valid domain name (not queried)' })),
+    social: handles.map((platform) => ({ platform, handle: name, verdict: 'could-not-confirm', basis: 'not a valid handle (not queried)' })),
+    apps: { source: 'iTunes search', verdict: 'could-not-confirm', basis: 'not a valid name (not queried)' },
+  }
+}
+
 const report = [];
 for (const name of names) {
+  // One invalid subject, one answer: if the name cannot be a domain label, no check may claim
+  // anything about it. Before this, the domain and handle rows refused while the app-store row
+  // still said "available" for the same unusable name - three rows disagreeing about one subject.
+  if (!isValidLabel(name)) {
+    report.push(refusedReport(name, tlds, handles))
+    continue
+  }
   const domains = [];
   for (const tld of tlds) domains.push(await checkDomain(name, tld));
   const social = [];
