@@ -25,7 +25,16 @@ if (args.includes('--self-check')) {
   expect('handle 200', classifyHandle(200).verdict, 'taken');
   expect('handle 429', classifyHandle(429).verdict, 'could-not-confirm');
   expect('handle 403', classifyHandle(403).verdict, 'could-not-confirm');
-  if (fail.length === 0) console.log('check.mjs --self-check PASS (9 verdict mappings, offline)');
+  // Regression guard for the subject-substitution bug found 2026-11-24: an invalid name used to be
+  // percent-encoded into an RDAP request the registry answers 404 to, and 404 is the "available"
+  // signal. Both of the next two assertions must keep failing the old behaviour.
+  expect('label "a b" valid', isValidLabel('a b'), false);
+  expect('label "a..b" valid', isValidLabel('a..b'), false);
+  expect('label "-lead" valid', isValidLabel('-lead'), false);
+  expect('label "openai" valid', isValidLabel('openai'), true);
+  expect('label "a-b2" valid', isValidLabel('a-b2'), true);
+  expect('label 64 chars valid', isValidLabel('a'.repeat(64)), false);
+  if (fail.length === 0) console.log('check.mjs --self-check PASS (15 verdict/label mappings, offline)');
   else { console.log('check.mjs --self-check FAIL: ' + fail.join('; ')); process.exit(1); }
   process.exit(0);
 }
@@ -77,9 +86,22 @@ async function get(url, ms = 8000, accept = 'text/html') {
   }
 }
 
+// A DNS label has a shape. Without this check, `a b.com` is percent-encoded into a request the
+// registry answers 404 to, and 404 is the signal for "available" - so an invalid name would come
+// back as a confident availability claim. Found 2026-11-24 after a reader on thecolony.cc pointed
+// out that a check can run on the request and never on the subject.
+export function isValidLabel(name) {
+  return typeof name === 'string' && /^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?$/i.test(name);
+}
+
 // RDAP: 404 means the registry has no such domain, which is the only definite "available" signal.
 async function checkDomain(name, tld) {
   const fqdn = `${name}.${tld}`;
+  // Not a valid name, so nothing is queried and nothing is claimed. This is the one place where
+  // refusing to ask is the honest answer: the 404 we would get is indistinguishable from a real one.
+  if (!isValidLabel(name) || !/^[a-z]{2,63}$/i.test(tld)) {
+    return { fqdn, verdict: 'could-not-confirm', basis: 'not a valid domain name (not queried)' };
+  }
   const r = await get(`https://rdap.org/domain/${fqdn}`, 9000, 'application/rdap+json,application/json');
   return { fqdn, ...classifyDomain(r.status) };
 }
@@ -122,7 +144,18 @@ for (const name of names) {
   const domains = [];
   for (const tld of tlds) domains.push(await checkDomain(name, tld));
   const social = [];
-  for (const platform of handles) social.push(await checkHandle(platform, name.replace(/[^a-z0-9-]/g, '')));
+  // Stripping characters silently changes the subject: `a b` became `ab`, and the report said
+  // "a b is taken on github" after checking `ab`. If normalization changes the name, say so and
+  // claim nothing - the same rule as the invalid-domain case, applied to handles.
+  const handle = name.replace(/[^a-z0-9-]/g, '')
+  for (const platform of handles) {
+    if (handle !== name) {
+      social.push({ platform, handle, verdict: 'could-not-confirm', queriedAs: handle,
+        basis: `handle normalization changed the name (${JSON.stringify(name)} -> ${JSON.stringify(handle)}), not queried` })
+      continue
+    }
+    social.push(await checkHandle(platform, handle))
+  }
   const apps = await checkApps(name);
   report.push({ name, domains, social, apps });
 }
