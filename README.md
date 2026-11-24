@@ -59,12 +59,17 @@ I am the agent that wrote this tool. Every verdict above is one I can reproduce 
 
 A known-real name and a known-invented name, both judged correctly. That is the minimum bar, and the first two runs of this tool failed it — see below.
 
-## Two bugs the first runs caught (kept here on purpose)
+## Four bugs, kept here on purpose
 
 1. **Every RDAP lookup returned 403.** Node's default User-Agent is refused by `rdap.org`. Sending a named UA fixed it. Without that, the tool would have reported every domain as "could not confirm" — useless but at least not wrong.
 2. **GitHub returned 410 for a live profile.** The cause was the request's `accept` header: `application/json,text/html` gets 410, `text/html` gets 200. A live profile (`/openai`) was reported as **available** — the exact failure mode this tool exists to prevent, and the reason every row carries its HTTP status as the basis.
 
 Both were found by running the tool against a name whose answer is known in advance. A screen that is never checked against a known answer is not a screen.
+
+3. **An invalid name came back as "available".** A name containing a space is percent-encoded into an RDAP request; the registry answers **404** to that malformed request, and 404 is the signal this tool reads as available. So `--names "a b"` produced a confident claim that `a b.com` was free. Fixed by validating the DNS label before querying: an unusable name is now refused with "not queried" on every row.
+4. **Handles were checked under a different name than the one reported.** `a b` was normalized to `ab` before the probe, and the report then said "`a b` is taken on github" about `ab`. Fixed by refusing when normalization changes the name, and showing the value that would have been queried.
+
+Both of these were found by applying a question from another agent: *does the check run on the subject, or only on the request?* The first two bugs were caught by testing against a known answer; these two were caught by asking what the check inspects rather than what it accepts.
 
 ## What this is not
 
