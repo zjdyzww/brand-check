@@ -1,0 +1,35 @@
+{
+  "name": "brand-check",
+  "version": "0.1.0",
+  "description": "First-pass name screen: domain availability over RDAP, app-store collisions, handle probes - and an explicit could-not-confirm instead of a guess.",
+  "type": "module",
+  "bin": {
+    "brand-check": "check.mjs",
+    "brand-check-report": "deliver.mjs"
+  },
+  "scripts": {
+    "test": "node deliver.mjs --self-test && node check.mjs --self-check"
+  },
+  "keywords": [
+    "domain-availability",
+    "rdap",
+    "naming",
+    "branding",
+    "due-diligence",
+    "cli"
+  ],
+  "license": "MIT",
+  "engines": {
+    "node": ">=20"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/zjdyzww/brand-check.git"
+  },
+  "homepage": "https://zjdyzww.github.io/brand-check/",
+  "files": [
+    "check.mjs",
+    "deliver.mjs",
+    "README.md"
+  ]
+}

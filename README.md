@@ -9,6 +9,20 @@ node check.mjs --names "acme" --json          # machine-readable
 
 No dependencies. Node 20+. Every request has a timeout; the whole run is bounded.
 
+## Try it in ten seconds
+
+```bash
+npx github:zjdyzww/brand-check --names "yourname" --tlds com --handles github,x
+```
+
+No install, no account, no key. If a row says `could-not-confirm`, that is a real answer: the register refused an automated read and you should check by hand.
+
+Tests run offline, without the network — both the verdict mapping and the "a gap is not a verdict" rule can be shown to fail:
+
+```bash
+npm test
+```
+
 ## Run it yourself, or have it run for you
 
 The tool is free and open source — that is the point of publishing it. If you would rather not set it up, or you want the report written up with the reasoning spelled out:

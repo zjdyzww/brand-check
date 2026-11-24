@@ -13,6 +13,23 @@
 const args = process.argv.slice(2);
 const val = (flag, dflt) => { const i = args.indexOf(flag); return i > -1 ? args[i + 1] : dflt; };
 
+if (args.includes('--self-check')) {
+  const fail = [];
+  const expect = (label, got, want) => { if (got !== want) fail.push(`${label}: got ${got}, want ${want}`); };
+  expect('domain 404', classifyDomain(404).verdict, 'available');
+  expect('domain 200', classifyDomain(200).verdict, 'taken');
+  expect('domain 403', classifyDomain(403).verdict, 'could-not-confirm');
+  expect('domain no-response', classifyDomain(0).verdict, 'could-not-confirm');
+  expect('handle 404', classifyHandle(404).verdict, 'available');
+  expect('handle 410', classifyHandle(410).verdict, 'available');
+  expect('handle 200', classifyHandle(200).verdict, 'taken');
+  expect('handle 429', classifyHandle(429).verdict, 'could-not-confirm');
+  expect('handle 403', classifyHandle(403).verdict, 'could-not-confirm');
+  if (fail.length === 0) console.log('check.mjs --self-check PASS (9 verdict mappings, offline)');
+  else { console.log('check.mjs --self-check FAIL: ' + fail.join('; ')); process.exit(1); }
+  process.exit(0);
+}
+
 const names = String(val('--names', '')).split(',').map((s) => s.trim().toLowerCase()).filter(Boolean);
 const tlds = String(val('--tlds', 'com,net,org')).split(',').map((s) => s.trim()).filter(Boolean);
 const handles = String(val('--handles', 'github,x')).split(',').map((s) => s.trim()).filter(Boolean);
@@ -64,18 +81,28 @@ async function get(url, ms = 8000, accept = 'text/html') {
 async function checkDomain(name, tld) {
   const fqdn = `${name}.${tld}`;
   const r = await get(`https://rdap.org/domain/${fqdn}`, 9000, 'application/rdap+json,application/json');
-  if (r.status === 404) return { fqdn, verdict: 'available', basis: 'RDAP 404 (registry has no such domain)' };
-  if (r.status === 200) return { fqdn, verdict: 'taken', basis: 'RDAP 200 (registered)' };
-  return { fqdn, verdict: 'could-not-confirm', basis: `RDAP status ${r.status || r.error}` };
+  return { fqdn, ...classifyDomain(r.status) };
+}
+
+// The three-way verdict is the product, so it lives in pure functions that can be
+// asserted offline. Keeping the mapping inline made it untestable without the network,
+// which meant the only thing never tested was the rule customers pay for.
+export function classifyDomain(status) {
+  if (status === 404) return { verdict: 'available', basis: 'RDAP 404 (registry has no such domain)' };
+  if (status === 200) return { verdict: 'taken', basis: 'RDAP 200 (registered)' };
+  return { verdict: 'could-not-confirm', basis: `RDAP status ${status || 'no response'}` };
+}
+export function classifyHandle(status) {
+  if (status === 404 || status === 410) return { verdict: 'available', basis: `HTTP ${status} on profile URL` };
+  if (status === 200) return { verdict: 'taken', basis: 'HTTP 200 on profile URL' };
+  return { verdict: 'could-not-confirm', basis: `HTTP ${status || 'no response'} (login wall or rate limit)` };
 }
 
 async function checkHandle(platform, handle) {
   const build = HANDLE_URL[platform];
   if (!build) return { platform, handle, verdict: 'could-not-confirm', basis: 'no public probe defined for this platform' };
   const r = await get(build(handle), 8000, 'text/html');
-  if (r.status === 404 || r.status === 410) return { platform, handle, verdict: 'available', basis: `HTTP ${r.status} on profile URL` };
-  if (r.status === 200) return { platform, handle, verdict: 'taken', basis: 'HTTP 200 on profile URL' };
-  return { platform, handle, verdict: 'could-not-confirm', basis: `HTTP ${r.status || r.error} (login wall or rate limit)` };
+  return { platform, handle, ...classifyHandle(r.status) };
 }
 
 async function checkApps(name) {
