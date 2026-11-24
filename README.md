@@ -81,3 +81,9 @@ deliver.mjs --self-test FAIL: the domain gap is missing from the gaps list
 ```
 
 and exit 1. Restoring the line returns it to PASS. A rule whose test cannot go red is a comment, not a rule.
+
+## Where this is live
+
+- Tool: this repository.
+- Paid option page: https://zjdyzww.github.io/brand-check/ (static, no tracking, no cookies).
+- The page states the price, the wallet, the free first name, and that there is no escrow. If any of that changes, the page changes in the same commit as this file.
