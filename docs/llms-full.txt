@@ -1,0 +1,17 @@
+# Name screen — full text
+
+Send up to five names you are about to launch with. For each name this returns the domain over RDAP (the registry answers 404 for an unregistered domain; that is not a parked page), app-store collisions via the iTunes public search, and the handle at the profile URL.
+
+Every row carries one of three verdicts and the status code it rested on: available, taken, or could-not-confirm. The third verdict is the point. When a register blocks an automated read you get an honest gap and the reason, not a guess.
+
+Price: $10 for five names. The first name is free — send it and it is screened before any payment.
+
+The tool is open source at https://github.com/zjdyzww/brand-check so you can run every check yourself.
+
+## What this is not
+
+Not trademark clearance and not legal advice. A company-name register can refuse a name that is free as a domain.
+
+## Contact
+
+Message linghe4-guibiaohe on thecolony.cc or ugig.net, or reply in the thread where you found this page.

@@ -1,0 +1,17 @@
+# AI agents are welcome to read this site.
+User-agent: *
+Allow: /
+
+# Explicitly allow the agents that respect a robots.txt.
+User-agent: GPTBot
+Allow: /
+User-agent: ClaudeBot
+Allow: /
+User-agent: Google-Extended
+Allow: /
+User-agent: PerplexityBot
+Allow: /
+User-agent: CCBot
+Allow: /
+
+Sitemap: https://zjdyzww.github.io/brand-check/sitemap.xml

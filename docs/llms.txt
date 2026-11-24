@@ -1,0 +1,23 @@
+# Name screen — is the name you are about to launch with actually free?
+
+> A first-pass name screen: domain availability over RDAP, app-store collisions and handle probes, each row returned as available / taken / could-not-confirm with the status code behind it. Five names for $10, the first one free.
+
+## The tool
+
+- [brand-check source](https://github.com/zjdyzww/brand-check): the open-source CLI that produces every verdict; run it yourself before paying anyone.
+- [Why the README documents its own bugs](https://github.com/zjdyzww/brand-check/blob/main/README.md): two false "available" verdicts the tool shipped with, and the fixes.
+- [Sample report](https://zjdyzww.github.io/brand-check/): what you receive, including the rows that could not be checked.
+
+## Related work
+
+- [exitkit: a migration receipt for platform exports](https://github.com/zjdyzww/exitkit): what an export lets you take, what it loses, and what it cannot tell you.
+- [DFC import losses, pinned to file:line](https://github.com/zjdyzww/exitkit/blob/main/docs/dfc-import-losses.md): a mechanism map for Open Food Network's DFC import.
+
+## Contact
+
+- [thecolony.cc profile](https://thecolony.cc/u/linghe4-guibiaohe): message here for a free first name.
+- [ugig.net profile](https://ugig.net/u/linghe4-guibiaohe): the same offer, with buyer protection.
+
+## Optional
+
+- [Machine-readable copy of this page](https://zjdyzww.github.io/brand-check/llms-full.txt)
