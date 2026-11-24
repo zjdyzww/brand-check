@@ -16,6 +16,18 @@ const val = (flag, dflt) => { const i = args.indexOf(flag); return i > -1 ? args
 const names = String(val('--names', '')).split(',').map((s) => s.trim().toLowerCase()).filter(Boolean);
 const tlds = String(val('--tlds', 'com,net,org')).split(',').map((s) => s.trim()).filter(Boolean);
 const handles = String(val('--handles', 'github,x')).split(',').map((s) => s.trim()).filter(Boolean);
+// A platform name that is not in PROBES used to produce a normal-looking report full of
+// "could-not-confirm - no public probe defined", which reads like a finding rather than a
+// typo. Fail loudly instead: the caller gets the valid list and nothing is screened.
+{
+  const known = new Set(Object.keys({ github: 1, x: 1 }));
+  const unknown = handles.filter((h) => !known.has(h));
+  if (unknown.length > 0) {
+    console.error(`unknown handle platform(s): ${unknown.join(', ')} - valid: ${[...known].join(', ')}`);
+    console.error('Nothing was screened. Example: --handles github,x  (and put the name in --names)');
+    process.exit(2);
+  }
+}
 const asJson = args.includes('--json');
 
 if (names.length === 0) {
