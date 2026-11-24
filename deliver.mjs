@@ -84,7 +84,15 @@ lines.push('## Could not confirm');
 if (gaps.length === 0) {
   lines.push('None - every row above rested on a status code.');
 } else {
-  for (const g of gaps) lines.push(`- ${g} - check this one by hand before you commit to the name.`);
+  // Advice must match the reason. "Check this by hand" is right for a register that blocked a read
+  // and wrong for a name that cannot exist - there is nothing to check by hand, the name needs
+  // replacing. Found by running the paid report against an invalid input.
+  for (const g of gaps) {
+    const advice = /not a valid /.test(g)
+      ? 'this is not a usable name - replace it rather than checking it.'
+      : 'check this one by hand before you commit to the name.';
+    lines.push(`- ${g} - ${advice}`);
+  }
 }
 lines.push('');
 lines.push('## What this is not');
